@@ -1,0 +1,529 @@
+---
+title: "77 Districts Data Interactive Visualization of Nepal"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+```{r setup, include=FALSE}
+library(datasets)
+library(flexdashboard)
+library(yaml)
+library(knitr)
+library(DT)
+library(rpivotTable)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(openintro)
+library(highcharter)
+library(ggvis)
+library(sp)
+library(datasets)
+```
+```{r,echo=FALSE}
+setwd("C:/Users/user/Desktop/publication/HDImap/NPL")
+data <- read.csv("C:/Users/user/Desktop/publication/HDImap/NPL/districtsss.csv")
+```
+```{r}
+mycolors=c("blue","#ffc125","darkgreen","darkorange")
+```
+
+Interactive Data Visualization
+================================
+
+Row
+--------------------------------------------
+
+### HDI, Literacy and Poverty of Nepal
+
+```{r}
+valueBox(length(data$id),
+         icon ="fa-user" )
+
+```
+
+### AVERAGE HDI 
+
+```{r}
+ gauge(round(mean(data$HDI), 
+ digits=2), 
+ min= 0, 
+ max=350,
+ gaugeSectors(success= c(0,150),
+ warning=c(150,240),
+ danger=c(240,350),
+ colors=c('green','yellow','red' )))
+```
+
+### AVERAGE Literacy 
+
+```{r}
+ gauge(round(mean(data$Lit), 
+ digits=2), 
+ min= 0, 
+ max=350,
+ gaugeSectors(success= c(0,150),
+ warning=c(150,240),
+ danger=c(240,350),
+ colors=c('green','yellow','red' )))
+```
+
+### AVERAGE Poverty
+
+```{r}
+ gauge(round(mean(data$Pov), 
+ digits=2), 
+ min= 0, 
+ max=350,
+ gaugeSectors(success= c(0,150),
+ warning=c(150,240),
+ danger=c(240,350),
+ colors=c('green','yellow','red' )))
+```
+
+
+### Province 1 
+
+```{r}
+valueBox(sum(data$Province=="Province 1"),
+         icon='fa-building')
+
+```
+
+### Province 2 
+
+```{r}
+valueBox(sum(data$Province  == "Province 2"),
+         icon='fa-building')
+
+```
+
+### Province 3 
+
+```{r}
+valueBox(sum(data$Province  == "Province 3"),
+         icon='fa-building')
+
+```
+
+### Province 5 
+
+```{r}
+valueBox(sum(data$Province  == "Province 5"),
+         icon='fa-building')
+
+```
+
+### Gandaki Pradesh
+
+```{r}
+valueBox(sum(data$Province  == "Gandaki"),
+         icon='fa-building')
+
+```
+
+### Karnali Pradesh
+
+```{r}
+valueBox(sum(data$Province  == "Karnali"),
+         icon='fa-building')
+
+```
+
+### Sudurpashchim Pradesh
+
+```{r}
+valueBox(sum(data$Province  == "Sudurpashchim"),
+         icon='fa-building')
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Interactive Province/Districts Bar Plot
+
+```{r}
+p1= data %>%
+group_by(Province) %>%
+summarise(count= n()) %>%
+plot_ly(x= ~ Province,
+          y= ~ count,
+          color="blue",
+          type='bar') %>%
+layout(xaxis=list(title="Province By District"), 
+yaxis=list(title='Count'))
+p1
+
+```
+
+### Pie Chart Area by District of Nepal
+
+```{r}
+p2=data %>%
+group_by(Province) %>%
+summarise(count=n()) %>%
+  filter(count >5) %>%
+  plot_ly(labels= ~Province,
+          values= ~count,
+          marker= list(color=mycolors)) %>%
+  add_pie(hole=0.2)  %>%
+  layout(xaxis=list(zeroline=F,
+                    showline=F,
+                    showticklabels=F,
+                    showgrid=F),
+        yaxis=list(zeroline=F,
+                 showline=F,
+                 showticklabels=F,
+                 showgrid=F))
+p2
+```
+
+### Bar Plot of HDI VS Literacy of Nepal 
+
+```{r}
+p3=plot_ly(data,
+x= ~HDI,
+y= ~Lit,
+text= paste("HDI:",data$HDI,
+"Literacy Rate",
+data$HDI),
+type="bar") %>%
+layout(xaxis= list(title="Human Development Index"),
+yaxis=list(title="HDI VS Literacy"))
+p3
+```
+
+Row
+------------------------------------------------
+### Scatter Plot Poverty VS Literacy
+
+```{r}
+p4=plot_ly(data, x=~Pov) %>%
+add_markers(y= ~Lit,
+text= ~paste("Literacy", Lit),
+showlegend =F) %>%
+add_lines(y= ~fitted(loess(Pov ~ Lit)),
+name="Loess Smotother", 
+color=I("#FFC125"),
+showlegend= T,
+line=list(width=5)) %>%
+layout(xaxis=list(title="Poverty Index"),
+yaxis=list(title="Literacy"))
+p4
+```
+
+### Box Plot HDI and Literacy by Province
+
+```{r}
+data  %>%
+group_by(Province) %>%
+ggvis(~Province,~Lit,fill=~Province) %>%
+layer_boxplots()
+```
+
+MAP 1
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### VDC MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 40, fig.height = 7}
+library(dplyr)
+library(rgdal)
+library(ggplot2)
+library(sp)
+library(rgeos) 
+library(maptools)
+setwd("C:/Users/user/Desktop/publication/HDImap/NPL")
+nepal.adm3.shp<-readOGR(dsn='C:/Users/user/Desktop/publication/HDImap/NPL/npl_admbnda_adm2_nd_20190430.SHP', layer="npl_admbnda_adm2_nd_20190430", stringsAsFactors = FALSE)
+nepal.adm3.shp.df<-fortify(nepal.adm3.shp, region = "ADM2_EN")
+map <- ggplot(data = nepal.adm3.shp.df, aes(x =long, y = lat, group = group))
+map + geom_path()
+```
+
+
+### DISRICT MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+nepal.adm3.shp<-readOGR(dsn='C:/Users/user/Desktop/publication/HDImap/NPL/npl_admbnda_adm2_nd_20190430.SHP', layer="npl_admbnda_adm2_nd_20190430", stringsAsFactors = FALSE)
+nepal.adm3.shp.df<-fortify(nepal.adm3.shp, region = "DIST_EN")
+hpi.data <- read.csv("C:/Users/user/Desktop/publication/HDImap/NPL/districtsss.csv")
+colnames(hpi.data) <- c("id","name","HDI","Lit","Pov")
+nepal.adm3.shp.df<-merge(nepal.adm3.shp.df,hpi.data, by ="id")
+map <- ggplot(data = nepal.adm3.shp.df, aes(x =long, y = lat, group = group))
+map + geom_path()
+```
+
+Row
+-----------------------------------------------------------------------
+
+### CHLOROPLATH MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 22, fig.height = 7}
+plot(map + 
+  geom_polygon(aes(fill = HDI), color = 'gray', size = 0.1) +
+  scale_fill_gradient(low = "#132B43", high = "#56B1F7", guide = "colourbar") +
+  coord_fixed(1.3) +
+  guides(fill=guide_colorbar(title="HDI Index")) + 
+  theme(legend.justification=c(0,0), legend.position=c(0,0)))
+theme_bare <- theme(
+  axis.line = element_blank(), 
+  axis.text.x = element_blank(), 
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank(), 
+  axis.title.x = element_blank(), 
+  axis.title.y = element_blank(),
+  legend.text=element_text(size=7),
+  legend.title=element_text(size=8),
+  panel.background = element_blank(),
+  panel.border = element_rect(colour = "gray", fill=NA, size=0.5)  )
+```
+
+### COLOR CHLOROPLATH MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+plot(map + 
+  geom_polygon(aes(fill = HDI), color = 'gray', size = 0.1) +
+  guides(fill=guide_colorbar(title="HDI Index")) + 
+  scale_fill_gradient(high = "#e34a33", low = "#fee8c8", guide = "colorbar") +
+  coord_fixed(1.3) +
+  theme(legend.justification=c(0,0), legend.position=c(0,0)) +
+  theme_bare)
+```
+
+MAP 2
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### DISTRICT NAME MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+centroids <- setNames(do.call(rbind.data.frame, by(nepal.adm3.shp.df, nepal.adm3.shp.df$group, function(x) {Polygon(x[c('long', 'lat')])@labpt})), c('long', 'lat')) 
+centroids$label <-nepal.adm3.shp.df$id[match(rownames(centroids), nepal.adm3.shp.df$group) ]
+centroids$label=hpi.data$name
+plot(map + 
+  geom_polygon(aes(fill = HDI), color = 'gray', size = 0.1) +
+  guides(fill=guide_colorbar(title="HDI Index")) + 
+  scale_fill_gradient(high = "#e34a33", low = "#fee8c8", guide = "colourbar") +
+  coord_fixed(1.3) +
+  theme(legend.justification=c(0,0), legend.position=c(0,0)) +
+  with(centroids, annotate(geom="text", x = long, y = lat, label=label, size=2.5)) +
+  theme_bare)
+```
+
+### HDI COLOR MAP OF NEPAL 
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+centroids.selected <- centroids[centroids$label %in% (hpi.data[hpi.data$HDI>0.4,]$id),]
+plot(map + 
+  geom_polygon(aes(fill = HDI), color = 'gray', size = 0.1) +
+  guides(fill=guide_colorbar(title="HDI Index")) + 
+  scale_fill_gradient(high = "#e34a33", low = "#fee8c8", guide = "colorbar") +
+  coord_fixed(1.3) +
+  theme(legend.justification=c(0,0), legend.position=c(0,0)) +
+  with(centroids.selected, annotate(geom="text", x = long, y = lat, label=label, size=2)) +
+  theme_bare)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### LITERSACY MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+plot(map + 
+  geom_polygon(aes(fill = Lit), color = 'gray', size = 0.1) +
+  ggtitle("Literacy Index of Nepal") +
+  guides(fill=guide_colorbar(title="Literacy Rate")) + 
+  scale_fill_gradient(high = "#e34a33", low = "#fee8c8", guide = "colorbar") +
+  coord_fixed(1.3) +
+  theme(legend.justification=c(0,-0.1), legend.position=c(0.05,0)) +
+  with(centroids.selected, annotate(geom="text", x = long, y = lat, label=label, size=2)) +
+  theme_bare)
+```
+
+### POVERTY MAP OF NEPAL
+
+```{r, echo=FALSE,fig.width = 10, fig.height = 7}
+plot(map + 
+  geom_polygon(aes(fill = Pov), color = 'gray', size = 0.1) +
+  guides(fill=guide_colorbar(title="Poverty Index")) + 
+  scale_fill_gradient(high = "#e34a33", low = "#fee8c8", guide = "colourbar") +
+  coord_fixed(1.3) +
+  theme(legend.justification=c(0,0), legend.position=c(0,0)) +
+  with(centroids, annotate(geom="text", x = long, y = lat, label=label, size=2.5)) +
+  theme_bare)
+```
+
+Data Table
+===========
+
+```{r, echo=FALSE}
+setwd("C:/Users/user/Desktop/publication/HDImap/NPL")
+data <- read.csv("C:/Users/user/Desktop/publication/HDImap/NPL/districtsss.csv")
+datatable(data,
+caption="failure Data",
+rownames=T,
+filter="top",
+options=list(pageLength=25))
+```
+
+Pivottable
+===========
+
+```{r, echo=FALSE}
+rpivotTable(data,
+aggregatorName="Count",
+cols="HDI",
+rows="Province",
+rendererName="Heatmap")
+```
+
+
+### HDI MAX
+
+```{r, echo=FALSE}
+valueBox(max(data$HDI),icon="fa-user")
+```
+
+### Average Literacy
+
+```{r}
+valueBox(round(mean(data$Lit),
+digits=2),
+icon="fa-area-user")
+```
+
+### Average HDI
+
+```{r, echo=FALSE}
+valueBox(round(mean(data$HDI),
+digits=2),
+icon="fa-area-user")
+```
+
+Report
+=======
+* This is a report on `r length(data$HDI)` HDI of Nepal failure.
+* The average Literacy  was `r mean(data$Lit)`
+* The average Area sq Km2 is`r mean(data$Area)`
+This report was generated on `r format(Sys.Date(),format="%B %d%Y")`.
+
+About Author
+============
+**Yagyanath Rimal**
+20 th July, 1975
+Pokhara Lekhnath Municipality Wardno 30 Kaski Nepal,
+Postbox: 427
++977- 9846283010(Hand-phone) +977 061504116 (H)
+ +977-561698(O)
+E-mail: rimal.yagya@gmail.com
+rimal.yagya@pu.edu.np
+
+**Education** 
+Master of Science in Information Technology (M.Sc. IT); Sikkim Manipal University of Health, Medical & Technological Sciences, India; with (First honors) 68.8 Percentage 2006.
+**Publication (Books)**
+1. Programming in C (Book 2013, Book Ozone publication Nepal)
+2. Object Oriented Programming in C++ (Book, 2012 Asmita Publication Nepal)
+3. A Reference Book on C Programming (Book, 2016 Ozone Publication Nepal) 
+•4. A Reference Book on ICT for Nepalese Civil Servants (2019, Pairabi Publication, Kathmandu Nepal )
+
+**Research**
+*Instructional Material Management in Early- Childhood Development Center of Community Schools: A Case Study of Lekhnath Municipality, Kaski. UGC TU NEPAL (completed).
+*Computer Literacy Among Faculty Members of Pokhara University:  A comparative study among constituent and affiliated campus (Research on going) UGC PURC Grant, Pokhara ( PURC ongoing)
+Student’s Grade Analysis using Machine Learning Techniques of BE Student of Pokhara University Fall 2018 (Research on going Faculty Grant SOE, Pokhara University (PURC Pokhara University ongoing).
+
+**Published Articles**
+*Cognitive Aspects of Child Learning in Early Child Learning Centers
+SILVER JUBLIEE SMARIKA Nepal  -2017   Shree Ghilibarang Primary School, Modi-1 Parbat   Nepal (Published)    
+*Role of Physical Instructional Materials in Early Childhood Learning Centers
+PRAGYAMANCH    Year: 30 Vol.: 15, September 2017      ISSN: 2392-442X (Published) 
+*Does the Database Functional Dependency and its Normalization Make Uniform Database Management in Future?  International Research Journal of Mathematics, Engineering and IT ISSN: (2349-0322) Impact Factor- 5.489, Volume 5, Issue 6, June 2018(Published)
+https://www.mbsresearch.com/files/journals/2018/June/_current_2018_Jul_kkl84kiEDwjlwZJ.pdf
+https://www.aarf.asia/download.php?filename=../current/2018/Jul/KJg1YjjFGj1V1rn.pdf&new=PAPER2IRJMEITJUNE2018.pdf
+*Machine Learning Random Forest Cluster Analysis for Large Overfitting Data: using R Programming (Proceedings of the 11th INDIACom; INDIACom-2017; IEEE Conference ID: 40353 2017 4th International Conference on “Computing for Sustainable Global Development”, 01st - 03rd March, 2017 Bharati Vidyapeeth's Institute of Computer Applications and Management (BVICAM), New Delhi (INDIA) Published)
+https://drive.google.com/file/d/1CMafWFwkWypr_YUdvQqCT6k4ayqKPJdg/view?usp=sharing
+*A BEST WAY OF MULTI-LEVEL IMBALANCE RESEARCH DATA HANDLING USING R PROGRAMMING ( © 2019 JETIR May 2019, Volume 6, Issue 5 www.jetir.org (ISSN-2349-5162 
+http://www.jetir.org/papers/JETIRBW06018.pdf
+*Deterministic Machine Learning Cluster Analysis of Research Data: using R Programming. International Journal of Machine Learning and Networked Collaborative Engineering, 3(01). Retrieved from 
+https://www.mlnce.net/index.php/Home/article/view/73/51
+*Machine Learning Prediction of Wikipedia Time Series Data using: R Programming. International Journal of Machine Learning and Networked Collaborative Engineering, 3(02). Retrieved from https://pdfs.semanticscholar.org/8d3d/9c5fb1d47ec31613382d30444a1c7280c24e.pdf?_ga=2.172258912.219399991.1570258590-1067851224.1570258590
+https://www.mlnce.net/index.php/Home/article/view/82/54
+*Neural Network Machine Learning Techniques for Large Noisy Data Prediction using R Programming ( © 2019 JETIR May 2019, Volume 6, Issue 5 www.jetir.org (ISSN-2349-5162 
+http://www.jetir.org/papers/JETIRBW06019.pdf
+*Correlation Coefficient Analysis of Data using R Programming: Does It Effectives? ( © 2019 JETIR May 2019, Volume 6, Issue 5 www.jetir.org (ISSN-2349-5162) 
+http://www.jetir.org/papers/JETIRBW06020.pdf
+*Multi-layer Neural Network Perception for Large Data Prediction using R Programming (CENTRAL ASIAN JOURNAL OF MATHEMATICAL THEORY AND COMPUTER SCIENCES http://centralasianstudies.org/index.php/CAJMTCS  Volume: 01 Issue: 01 | Aug 2019
+http://centralasianstudies.org/index.php/CAJMTCS/article/view/2
+*Cross-Validation Method for Overfitting Research Data Using R Programming
+(CENTRAL ASIAN JOURNAL OF MATHEMATICAL THEORY AND COMPUTER SCIENCES http://centralasianstudies.org/index.php/CAJMTCS  Volume: 01 Issue: 01 | Aug 2019
+http://centralasianstudies.org/index.php/CAJMTCS/article/view/3/6
+*Basic Types of Regression Analysis in Various Research Data
+(CENTRAL ASIAN JOURNAL OF MATHEMATICAL THEORY AND COMPUTER SCIENCES http://centralasianstudies.org/index.php/CAJMTCS  Volume: 01 Issue: 01 | Aug 2019
+http://centralasianstudies.org/index.php/CAJMTCS/article/view/1
+*Machine Learning Cluster Analysis for Large Categorical Data Using R Programming  (Recent Trends in Programming languages Vol 6, No 2 (2019)
+*Regression Analysis of Research Data using R Programming (Recent Trends in Programming languages Vol 6, No 2 (2019)
+*Machine Learning Prediction of Time Series Data: Decomposition and Forecasting methods (Springer Book Series, Learning and Analytics in Intelligent Systems: LAIS)
+*Keras: The Best Machine Learning Process for Image Recognition and Classification (Springer Book Series, Learning and Analytics in Intelligent Systems: LAIS)
+*Regression Analysis of Large Research Data: Dimensional Reduction Techniques (Springer Book Series, Learning and Analytics in Intelligent Systems: LAIS)
+*Neural Network Machine Learning Analysis for Noisy Data: R Programming
+International Journal of Engineering and Advanced Technology (IJEAT)ISSN: 2249 –8958, Volume-8 Issue-6, August 2019 
+https://www.ijeat.org/wp-content/uploads/papers/v8i6/F8475088619.pdf
+
+**Editorial /Reviewer Memberships**
+*https://iiarp.org/committee.php
+*http://ygrc19.com/index.php/international-advisory-board/
+*http://www.gorea.org/
+*https://conferencecommunity.org/committees.php
+*https://www.firmsindia.org/editorialBoard.php
+*http://www.ic3online.in/comm.html
+*http://besh-conference.ga/Cambodia-17nov/committee.html
+
+**Conference Paper Presentation**
+*k-Nearest Neighbors Machine Learning Prediction of Cancer Categorical Data Using R Programming (international conference on Health Engineering in Disaster ICHED 2019 1-3 May 2019 Faculty of Science and technology Sphere and Pokhara University)
+*Naïve Bayes Machine Learning Classification with R Programming: A case study of binary data sets (International conference on current status of cross discipline research in statistical science Department of Statists Tribhuvan University Prithiv Narayan Campus Nepal May 8-9 2019)
+
+**Accepted Papers for Publications**
+1.Self-organizing Map for Reducing High-dimensional Data Reduction
+2.R Programming is Best Way for Social Media Network Analysis
+3.Missing Data Handling using R programming a case study of Iris Data sets
+
+**Professional Experience** 
+Post: Lecturer 
+Employer: Pokhara University, Kaski, Nepal 
+(27/12/2009 to present) http://www.pu.edu.np 
+Duties and responsibilities were: 
+Teaching programming (C, C++) languages for BE Civil, BE Electrical, B. Pharmacy, BPH, undergraduate students. 
+Hardware maintenance and Network Management 
+Website uploads and designs its components 
+Prepare manuals are available at: http://www.yagyarimal.com.np  
+
+**Post: IT Faculty** 
+Employer: College of Information Technology and Engineering, Kathmandu, Nepal (2/08/2006 to26/12/2009) http://www.cit.edu.np 
+Duties and responsibilities were:  
+Teaching programming languages in different semesters of undergraduate students (BCA, BIT and BE). 
+
+**Computer Skills** 
+Office Package (Basic of Information Technology, Word, Excel, Html, Access) 
+Programming (Java, C, C++, Oracle, Visual Basic, Visual C++, C#, SPSS, R Programming) 
+Electronic (Mathematic, Electronics/Network, Broadband Communication, Software Engineering, 
+Advance Internet Programming (Asp, Xml, Perl, Scripting Languages Java/VB) 
+Others (Client Server, Data Warehouse, E-Commerce, Digital Imaging, Wireless Mobile, E-CRM, Supply Chain Management, Secured E- Commerce, IT Law, Electives) etc.
+
+@Book{,
+  title = {R Markdown: The Definitive Guide},
+  author = {Yihui Xie and J.J. Allaire and Garrett Grolemund},
+  publisher = {Chapman and Hall/CRC},
+  address = {Boca Raton, Florida},
+  year = {2018},
+  note = {ISBN 9781138359338},
+  url = {https://bookdown.org/yihui/rmarkdown},
+}
+
+**Looking to get PhD in data sciences machine learning or AI**
